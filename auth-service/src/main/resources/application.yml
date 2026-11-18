@@ -1,0 +1,49 @@
+server:
+  port: ${PORT:8082}
+
+spring:
+  application:
+    name: auth-service
+  threads:
+    virtual:
+      # Every request runs on a virtual thread: blocking JDBC/BCrypt calls no longer pin
+      # a scarce platform thread, so the service scales without reactive code.
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/auth_db}
+    username: ${DB_USERNAME:postgres}
+    # Local-development default only. Always override with the DB_PASSWORD env var elsewhere.
+    password: ${DB_PASSWORD:7888}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+
+app:
+  jwt:
+    issuer: ${JWT_ISSUER:product-platform-auth}
+    access-token-ttl: ${JWT_TTL:1h}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+    registry-fetch-interval-seconds: 5
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+    prefer-ip-address: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

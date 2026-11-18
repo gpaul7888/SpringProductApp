@@ -1,0 +1,137 @@
+<header class="intro">
+  <h1>Products</h1>
+  <p class="muted">Everyone sees the full catalogue. You can edit and delete the products you added.</p>
+</header>
+
+@if (summary(); as s) {
+  <section class="stats" aria-label="Your summary">
+    <div class="card stat">
+      <span class="label">Signed in as</span>
+      <span class="value small">{{ s.owner.fullName }}</span>
+      <span class="muted note">
+        {{ s.profileFromAuthService ? 'Profile from auth-service' : 'auth-service unavailable – using token data' }}
+      </span>
+    </div>
+    <div class="card stat">
+      <span class="label">Your products</span>
+      <span class="value">{{ s.myProductCount }}</span>
+    </div>
+    <div class="card stat">
+      <span class="label">Your inventory value</span>
+      <span class="value">{{ s.myInventoryValue | currency: 'USD' }}</span>
+    </div>
+    <div class="card stat">
+      <span class="label">All products</span>
+      <span class="value">{{ s.totalProducts }}</span>
+    </div>
+  </section>
+}
+
+<div class="layout">
+  <section class="card editor">
+    <h2>{{ editing() ? 'Edit product' : 'Add a product' }}</h2>
+
+    @if (formError(); as message) {
+      <div class="alert alert-error" role="alert">{{ message }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="field">
+        <label for="name">Name</label>
+        <input id="name" type="text" formControlName="name" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <span class="hint">Name is required (up to 255 characters).</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="description">Description <span class="muted">(optional)</span></label>
+        <textarea id="description" rows="3" formControlName="description"></textarea>
+        @if (form.controls.description.invalid) {
+          <span class="hint">Up to 1000 characters.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="price">Price (USD)</label>
+        <input id="price" type="number" min="0.01" step="0.01" formControlName="price" />
+        @if (form.controls.price.touched && form.controls.price.invalid) {
+          <span class="hint">Enter a price between 0.01 and 99,999,999.99.</span>
+        }
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn" [disabled]="saving()">
+          {{ saving() ? 'Saving…' : editing() ? 'Save changes' : 'Add product' }}
+        </button>
+        @if (editing()) {
+          <button type="button" class="btn btn-ghost" (click)="cancelEdit()">Cancel</button>
+        }
+      </div>
+    </form>
+  </section>
+
+  <section class="card list">
+    <form class="search" (ngSubmit)="applySearch()">
+      <input type="search" placeholder="Search by name…" [formControl]="search" aria-label="Search products by name" />
+      <button type="submit" class="btn btn-ghost">Search</button>
+    </form>
+
+    @if (listError(); as message) {
+      <div class="alert alert-error" role="alert">{{ message }}</div>
+    }
+
+    @if (page(); as p) {
+      @if (p.content.length === 0) {
+        <p class="muted empty">No products found.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Owner</th>
+                <th class="num">Price</th>
+                <th><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (product of p.content; track product.id) {
+                <tr [class.selected]="editing()?.id === product.id">
+                  <td>
+                    <div class="name">{{ product.name }}</div>
+                    @if (product.description) {
+                      <div class="muted desc">{{ product.description }}</div>
+                    }
+                  </td>
+                  <td class="muted">{{ product.ownerName ?? '—' }}</td>
+                  <td class="num">{{ product.price | currency: 'USD' }}</td>
+                  <td class="row-actions">
+                    @if (product.editable) {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(product)">Edit</button>
+                      <button type="button" class="btn btn-danger btn-sm" (click)="remove(product)">Delete</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (p.totalPages > 1) {
+          <nav class="pager" aria-label="Pagination">
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="p.page === 0 || loading()" (click)="goToPage(p.page - 1)">
+              Previous
+            </button>
+            <span class="muted">Page {{ p.page + 1 }} of {{ p.totalPages }} · {{ p.totalElements }} products</span>
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="p.page + 1 >= p.totalPages || loading()" (click)="goToPage(p.page + 1)">
+              Next
+            </button>
+          </nav>
+        }
+      }
+    } @else if (loading()) {
+      <p class="muted empty">Loading products…</p>
+    }
+  </section>
+</div>

@@ -1,0 +1,13 @@
+<header class="topbar">
+  <a class="brand" routerLink="/">Product Platform</a>
+  @if (auth.user(); as user) {
+    <div class="session">
+      <span class="who">{{ user.fullName }}</span>
+      <button type="button" class="btn btn-ghost" (click)="auth.logout()">Log out</button>
+    </div>
+  }
+</header>
+
+<main class="page">
+  <router-outlet />
+</main>

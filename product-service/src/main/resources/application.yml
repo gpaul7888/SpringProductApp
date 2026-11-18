@@ -1,0 +1,63 @@
+server:
+  port: ${PORT:8081}
+  # Trust X-Forwarded-* headers from the gateway (correct Location headers, redirects, etc.).
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: product-service
+  threads:
+    virtual:
+      # Tomcat handles each request on a virtual thread. See ProductSummaryService for
+      # an explicit virtual-thread fan-out as well.
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/product_db}
+    username: ${DB_USERNAME:postgres}
+    # Local-development default only. Always override with the DB_PASSWORD env var elsewhere.
+    password: ${DB_PASSWORD:7888}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+  mvc:
+    problemdetails:
+      enabled: true
+  cloud:
+    loadbalancer:
+      cache:
+        ttl: 5s
+
+app:
+  auth-service:
+    # Logical service names - resolved through Eureka by the @LoadBalanced clients.
+    base-url: http://auth-service
+    jwk-set-uri: http://auth-service/.well-known/jwks.json
+    issuer: ${JWT_ISSUER:product-platform-auth}
+    connect-timeout: 2s
+    read-timeout: 3s
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+    registry-fetch-interval-seconds: 5
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+    prefer-ip-address: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

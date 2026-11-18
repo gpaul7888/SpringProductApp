@@ -1,0 +1,51 @@
+server:
+  # 8090 rather than the usual 8080, which is often taken by a local Apache/XAMPP install.
+  port: ${PORT:8090}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    loadbalancer:
+      cache:
+        # Re-read the instance list often, so newly started services are routable within seconds.
+        ttl: 5s
+    gateway:
+      server:
+        webflux:
+          # Only callers matching this regex get X-Forwarded-* headers passed on to the services
+          # (so they build links like Location with the gateway's address). Loopback only for local dev.
+          trusted-proxies: ${TRUSTED_PROXIES:127\.0\.0\.1|0:0:0:0:0:0:0:1}
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins: ${FRONTEND_ORIGIN:http://localhost:4200}
+                allowed-methods: [GET, POST, PUT, DELETE, OPTIONS]
+                allowed-headers: "*"
+                max-age: 3600
+          routes:
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**,/api/users/**
+            - id: product-service
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+    registry-fetch-interval-seconds: 5
+  instance:
+    # Register as "localhost" for local development (an IP changes with your network).
+    # In containers/Kubernetes set EUREKA_HOSTNAME to the container's host name.
+    hostname: ${EUREKA_HOSTNAME:localhost}
+    prefer-ip-address: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

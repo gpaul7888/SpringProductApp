@@ -1,0 +1,21 @@
+# OPTIONAL: a PostgreSQL for machines without a local install.
+# If PostgreSQL is already installed and running on port 5432, do NOT start this
+# (the ports would clash) - just create the two databases there instead.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: product-platform-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      # Matches the services' local-development default (DB_PASSWORD).
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-7888}
+      POSTGRES_DB: product_db
+    volumes:
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
